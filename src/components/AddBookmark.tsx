@@ -40,7 +40,7 @@ export default function AddBookmark({ collections, onAdd, onClose }: Props) {
           {tags.length > 0 && <div className="flex flex-wrap gap-1">{tags.map(t => <span key={t} className="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 cursor-pointer" onClick={() => setTags(tags.filter(x => x !== t))}>{t} ×</span>)}</div>}
         </div>
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <button onClick={() => url.trim() && onAdd({ url: url.trim(), title: title.trim() || url.trim(), description, favicon: '', collectionId, tags })}
+          <button onClick={() => url.trim() && onAdd({ url: url.trim(), title: title.trim() || url.trim(), description, favicon: '', collectionId, tags, visitCount: 0, lastVisited: null })}
             disabled={!url.trim()} className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition-colors">
             Save Bookmark
           </button>

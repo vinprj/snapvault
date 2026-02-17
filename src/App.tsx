@@ -15,9 +15,9 @@ function load<T>(key: string, fallback: T): T {
 export default function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => load('sv-bookmarks', []));
   const [collections, setCollections] = useState<Collection[]>(() => load('sv-collections', [
-    { id: '1', name: 'Reading', icon: '📚', color: 'blue', order: 0 },
-    { id: '2', name: 'Dev Tools', icon: '🛠️', color: 'green', order: 1 },
-    { id: '3', name: 'Design', icon: '🎨', color: 'pink', order: 2 },
+    { id: '1', name: 'Reading', icon: '📚', color: 'blue', order: 0, isPasswordProtected: false },
+    { id: '2', name: 'Dev Tools', icon: '🛠️', color: 'green', order: 1, isPasswordProtected: false },
+    { id: '3', name: 'Design', icon: '🎨', color: 'pink', order: 2, isPasswordProtected: false },
   ]));
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -92,6 +92,7 @@ export default function App() {
       icon, 
       color: 'gray', 
       order: prev.length,
+      isPasswordProtected: !!hashedPassword,
       password: hashedPassword
     }]);
   };

@@ -1,4 +1,4 @@
-import { Search, Plus, Sun, Moon, Download, RefreshCw } from 'lucide-react';
+import { Search, Plus, Sun, Moon, RefreshCw } from 'lucide-react';
 
 interface Props { 
   search: string; 

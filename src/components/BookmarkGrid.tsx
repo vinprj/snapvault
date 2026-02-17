@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Trash2, Globe, Edit2, Save, X, Search, Clock, Star, ArrowUpDown, Calendar, MousePointer } from 'lucide-react';
+import { ExternalLink, Trash2, Globe, Edit2, Save, X, Clock, ArrowUpDown, MousePointer } from 'lucide-react';
 import type { Bookmark, Collection } from '../types';
 
 type SortOption = 'date' | 'title' | 'visits';
@@ -87,10 +87,11 @@ export default function BookmarkGrid({ bookmarks, onUpdate, onDelete, onVisit, c
     return `${days}d ago`;
   };
 
-  const handleCardClick = (b: Bookmark) => {
+  const handleCardClick = (id: string) => {
     // Open in new tab and track visit
-    window.open(b.url, '_blank', 'noopener,noreferrer');
-    onVisit(b.id);
+    const b = bookmarks.find(bk => bk.id === id);
+    if (b) window.open(b.url, '_blank', 'noopener,noreferrer');
+    onVisit(id);
   };
 
   return (
@@ -258,7 +259,7 @@ function BookmarkCard({
       style={{ animationDelay: `${index * 50}ms` }}
       onMouseEnter={() => onHover(b.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onVisit(b)}
+      onClick={() => onVisit(b.id)}
     >
       <div className={`absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 transition-opacity duration-300 ${hoveredId === b.id ? 'opacity-100' : ''}`} />
       
