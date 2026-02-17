@@ -9,7 +9,7 @@ interface Props {
   onClose: () => void;
 }
 
-export default function ImportExport({ bookmarks, collections, onImport }: Props) {
+export default function ImportExport({ bookmarks, collections, onImport, onClose }: Props) {
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [importMessage, setImportMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
