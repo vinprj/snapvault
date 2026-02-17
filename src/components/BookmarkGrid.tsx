@@ -1,24 +1,27 @@
-import { useState } from 'react';
-import { ExternalLink, Trash2, Globe, Edit2, Save, X, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Trash2, Globe, Edit2, Save, X, Search, Clock, Star } from 'lucide-react';
 import type { Bookmark, Collection } from '../types';
 
-interface Props { 
-  bookmarks: Bookmark[]; 
-  onUpdate: (id: string, updates: Partial<Bookmark>) => void; 
-  onDelete: (id: string) => void; 
-  onVisit: (id: string) => void;
-  collections: Collection[]; 
-}
+interface Props { bookmarks: Bookmark[]; onUpdate: (id: string, updates: Partial<Bookmark>) => void; onDelete: (id: string) => void; collections: Collection[]; }
 
-export default function BookmarkGrid({ bookmarks, onUpdate, onDelete, onVisit, collections }: Props) {
+export default function BookmarkGrid({ bookmarks, onUpdate, onDelete, collections }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Bookmark>>({});
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [animateIn, setAnimateIn] = useState(false);
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
 
   if (!bookmarks.length) {
     return (
-      <div className="text-center py-20 text-gray-400">
-        <Globe size={48} className="mx-auto mb-3 opacity-50" />
-        <p className="text-lg">No bookmarks yet</p>
+      <div className="text-center py-20 text-gray-400 animate-pulse">
+        <div className="relative">
+          <Globe size={48} className="mx-auto mb-3 opacity-30" />
+          <div className="absolute inset-0 animate-ping bg-blue-400/20 rounded-full" />
+        </div>
+        <p className="text-lg font-medium text-gray-500">No bookmarks yet</p>
         <p className="text-sm mt-1">Click "Add" to save your first link</p>
       </div>
     );
@@ -50,123 +53,139 @@ export default function BookmarkGrid({ bookmarks, onUpdate, onDelete, onVisit, c
     setEditForm({ ...editForm, tags: editForm.tags?.filter(t => t !== tag) || [] });
   };
 
-  const handleVisit = (id: string, url: string) => {
-    onVisit(id);
-    window.open(url, '_blank');
-  };
-
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return 'Never';
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
+  const getTimeAgo = (timestamp: number) => {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {bookmarks.map(b => (
-        <div key={b.id} className="group p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-lg">
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 transition-all duration-500 ${animateIn ? 'opacity-100' : 'opacity-0'}`}>
+      {bookmarks.map((b, i) => (
+        <div 
+          key={b.id} 
+          className={`group relative p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 cursor-pointer ${
+            hoveredId === b.id ? 'ring-2 ring-blue-400/30' : ''
+          }`}
+          style={{ animationDelay: `${i * 50}ms` }}
+          onMouseEnter={() => setHoveredId(b.id)}
+          onMouseLeave={() => setHoveredId(null)}
+        >
+          {/* Hover glow effect */}
+          <div className={`absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 transition-opacity duration-300 ${hoveredId === b.id ? 'opacity-100' : ''}`} />
+          
           {editing === b.id ? (
-            <div className="space-y-2">
-              <input 
-                value={editForm.title || ''} 
-                onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500" 
-                placeholder="Title" 
-              />
-              <input 
-                value={editForm.url || ''} 
-                onChange={e => setEditForm({ ...editForm, url: e.target.value })}
-                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500" 
-                placeholder="URL" 
-              />
-              <textarea 
-                value={editForm.description || ''} 
-                onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 resize-none" 
-                placeholder="Description" 
-                rows={2} 
-              />
-              <select 
-                value={editForm.collectionId || ''} 
-                onChange={e => setEditForm({ ...editForm, collectionId: e.target.value || null })}
-                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent outline-none"
-              >
+            <div className="relative space-y-2">
+              <input value={editForm.title || ''} onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Title" />
+              <input value={editForm.url || ''} onChange={e => setEditForm({ ...editForm, url: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="URL" />
+              <textarea value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none" placeholder="Description" rows={2} />
+              <select value={editForm.collectionId || ''} onChange={e => setEditForm({ ...editForm, collectionId: e.target.value || null })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
                 <option value="">No Collection</option>
                 {collections.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
-              <div className="flex gap-1">
-                <button onClick={() => saveEdit(b.id)} className="flex-1 py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm flex items-center justify-center gap-1">
+              <div className="relative">
+                <input 
+                  onKeyDown={e => { if (e.key === 'Enter') { addTag(e.currentTarget.value); e.currentTarget.value = ''; }}} 
+                  placeholder="Add tag..." 
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              {editForm.tags && editForm.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {editForm.tags.map(t => (
+                    <span 
+                      key={t} 
+                      onClick={() => removeTag(t)} 
+                      className="px-2 py-1 text-xs rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 transition-colors flex items-center gap-1"
+                    >
+                      {t} <X size={10} />
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => saveEdit(b.id)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all hover:scale-[1.02] active:scale-95">
                   <Save size={14} /> Save
                 </button>
-                <button onClick={cancelEdit} className="flex-1 py-1 px-2 bg-gray-200 dark:bg-gray-800 rounded text-sm flex items-center justify-center gap-1">
+                <button onClick={cancelEdit} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-all">
                   <X size={14} /> Cancel
                 </button>
               </div>
             </div>
           ) : (
             <>
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-shrink-0">
-                  {b.favicon ? (
-                    <img src={b.favicon} alt="" className="w-6 h-6 rounded" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                  ) : (
-                    <Globe size={20} className="text-gray-400" />
+              <div className="relative flex items-start gap-3">
+                <div className="relative">
+                  <img 
+                    src={b.favicon || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`} 
+                    alt="" 
+                    className="w-10 h-10 rounded-lg mt-0.5 object-cover bg-white shadow-sm"
+                    onError={e => { (e.target as HTMLImageElement).src = ''; }} 
+                  />
+                  {hoveredId === b.id && (
+                    <div className="absolute inset-0 rounded-lg bg-blue-500/20 animate-pulse" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm truncate">{b.title}</h3>
-                  <p className="text-xs text-gray-500 truncate">{new URL(b.url).hostname}</p>
+                  <h3 className="font-semibold text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{b.title || b.url}</h3>
+                  <p className="text-xs text-gray-500 truncate mt-0.5 hover:text-gray-700 dark:hover:text-gray-300">{b.url}</p>
+                  {b.description && <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">{b.description}</p>}
                 </div>
               </div>
-
-              {b.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{b.description}</p>
-              )}
-
+              
               {b.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {b.tags.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
-                      {tag}
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {b.tags.map(t => (
+                    <span key={t} className="px-2 py-1 text-xs rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium">
+                      {t}
                     </span>
                   ))}
                 </div>
               )}
-
-              <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                <Eye className="w-3 h-3" />
-                <span>{b.visitCount || 0} visits</span>
-                {b.lastVisited && (
-                  <>
-                    <span>•</span>
-                    <span>Last: {formatDate(b.lastVisited)}</span>
-                  </>
-                )}
+              
+              {/* Metadata */}
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <Clock size={12} /> {getTimeAgo(b.createdAt)}
+                </span>
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <Globe size={12} /> {new URL(b.url).hostname.replace('www.', '')}
+                </span>
               </div>
-
-              <div className="flex gap-1">
-                <button 
-                  onClick={() => handleVisit(b.id, b.url)} 
-                  className="flex-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm flex items-center justify-center gap-1"
+              
+              {/* Action buttons */}
+              <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-[-4px]">
+                <a 
+                  href={b.url} 
+                  target="_blank" 
+                  rel="noopener" 
+                  className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-110 shadow-lg"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <ExternalLink size={14} /> Visit
-                </button>
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+              
+              <div className={`absolute bottom-16 right-3 flex gap-1 transition-all duration-200 ${hoveredId === b.id ? 'opacity-100' : 'opacity-0'}`}>
                 <button 
-                  onClick={() => startEdit(b)} 
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                  onClick={(e) => { e.stopPropagation(); startEdit(b); }} 
+                  className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-500 transition-all hover:scale-110"
                 >
                   <Edit2 size={14} />
                 </button>
                 <button 
-                  onClick={() => onDelete(b.id)} 
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                  onClick={(e) => { e.stopPropagation(); onDelete(b.id); }} 
+                  className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 transition-all hover:scale-110"
                 >
                   <Trash2 size={14} />
                 </button>

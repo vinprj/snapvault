@@ -4,12 +4,12 @@ interface Props {
   search: string; 
   onSearch: (q: string) => void; 
   onAdd: () => void; 
-  onExport: () => void;
+  onImportExport: () => void;
   dark: boolean; 
   onToggleDark: () => void; 
 }
 
-export default function Header({ search, onSearch, onAdd, onExport, dark, onToggleDark }: Props) {
+export default function Header({ search, onSearch, onAdd, onImportExport, dark, onToggleDark }: Props) {
   return (
     <header className="flex items-center gap-4 px-6 py-5 border-b-2 border-violet-200 dark:border-violet-900 pin-card">
       <div className="flex-1 relative">
@@ -28,7 +28,7 @@ export default function Header({ search, onSearch, onAdd, onExport, dark, onTogg
         <Plus size={20} /> Pin
       </button>
       <button
-        onClick={onExport}
+        onClick={onImportExport}
         className="p-3 rounded-2xl text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 smooth-vault"
         title="Export & Import"
       >
